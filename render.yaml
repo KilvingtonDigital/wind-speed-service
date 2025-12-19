@@ -2,11 +2,16 @@ services:
   - type: web
     name: wind-speed-service
     env: node
-    buildCommand: npm install && npm run build && npx puppeteer browsers install chrome
+    buildCommand: |
+      npm install
+      npx puppeteer browsers install chrome
+      npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
         value: false
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /opt/render/project/.cache/puppeteer/chrome/linux-*/chrome-linux*/chrome
     healthCheckPath: /health

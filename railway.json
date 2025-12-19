@@ -7,5 +7,15 @@
         "startCommand": "npm start",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10
+    },
+    "nixpacksPlan": {
+        "phases": {
+            "install": {
+                "nixPkgs": [
+                    "nodejs_20",
+                    "chromium"
+                ]
+            }
+        }
     }
 }
