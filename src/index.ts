@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +28,7 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
     console.log(`[INFO] Starting wind speed lookup for: ${address}`);
 
     const browser = await puppeteer.launch({
+        executablePath: '/usr/bin/chromium',
         headless: true,
         args: [
             '--no-sandbox',
