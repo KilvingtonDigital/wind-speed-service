@@ -38,7 +38,7 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
         ],
     });
 
-    let page;
+    let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
     try {
         page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 800 });
