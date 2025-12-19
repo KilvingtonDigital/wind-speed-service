@@ -37,15 +37,26 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
         ],
     });
 
+    let page;
     try {
-        const page = await browser.newPage();
+        page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 800 });
+
+        // Screenshot storage
+        const screenshots: { name: string; data: string }[] = [];
 
         console.log('[DEBUG] Navigating to ASCE Hazard Tool...');
         await page.goto('https://ascehazardtool.org/', {
             waitUntil: 'networkidle2',
             timeout: 60000,
         });
+
+        // Screenshot 1: After initial load
+        screenshots.push({
+            name: '1_after_load',
+            data: (await page.screenshot({ encoding: 'base64' })) as string
+        });
+        console.log('[DEBUG] Screenshot 1: After initial load');
 
         // Helper function for clicking by text
         const clickByText = async (tag: string, text: string) => {
@@ -98,6 +109,13 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
             console.warn('[WARN] Popup close sequence error:', e);
         }
 
+        // Screenshot 2: After modal close attempt
+        screenshots.push({
+            name: '2_after_modal_close',
+            data: (await page.screenshot({ encoding: 'base64' })) as string
+        });
+        console.log('[DEBUG] Screenshot 2: After modal close attempt');
+
         // 2. Input Address
         console.log(`[DEBUG] Searching for address: ${address}`);
         const inputSelector =
@@ -137,6 +155,13 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
             console.error('[ERROR] Error interacting with input:', e);
             throw new Error('Could not input address');
         }
+
+        // Screenshot 3: After address input
+        screenshots.push({
+            name: '3_after_address_input',
+            data: (await page.screenshot({ encoding: 'base64' })) as string
+        });
+        console.log('[DEBUG] Screenshot 3: After address input');
 
         // Wait for suggestions
         const suggestionSelector =
@@ -180,7 +205,23 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
 
         // 5. View Results
         console.log('[DEBUG] Clicking View Results...');
+
+        // Screenshot 4: Before View Results
+        screenshots.push({
+            name: '4_before_view_results',
+            data: (await page.screenshot({ encoding: 'base64' })) as string
+        });
+        console.log('[DEBUG] Screenshot 4: Before View Results');
+
         await clickByText('button', 'View Results');
+        await new Promise((r) => setTimeout(r, 2000));
+
+        // Screenshot 5: After View Results click
+        screenshots.push({
+            name: '5_after_view_results',
+            data: (await page.screenshot({ encoding: 'base64' })) as string
+        });
+        console.log('[DEBUG] Screenshot 5: After View Results click');
 
         // 6. Extract Result
         console.log('[DEBUG] Waiting for results...');
@@ -229,18 +270,32 @@ app.post('/api/wind-speed', async (req: Request, res: Response) => {
                 retrievedAt: new Date(),
                 success: true,
                 rawValue: windSpeed,
+                screenshots: screenshots
             });
         } else {
             throw new Error('Vmph not found on page.');
         }
     } catch (error: any) {
         console.error('[ERROR] Scraping failed:', error.message);
+
+        // Capture error screenshot if page exists
+        let errorScreenshots: { name: string; data: string }[] = [];
+        try {
+            if (page) {
+                errorScreenshots.push({
+                    name: 'error_state',
+                    data: (await page.screenshot({ encoding: 'base64' })) as string
+                });
+            }
+        } catch (e) { }
+
         return res.status(500).json({
             address,
             source: 'ASCE Hazard Tool',
             retrievedAt: new Date(),
             success: false,
             error: error.message,
+            screenshots: errorScreenshots
         });
     } finally {
         await browser.close();
